@@ -1,2 +1,6 @@
 *compiled
 *sublime*
+*.xcf
+*png
+
+/locale/*/

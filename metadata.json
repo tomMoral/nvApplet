@@ -1,0 +1,11 @@
+{
+  "description": "Icon showing when GPU Nvidia is on or off with bbswtich", 
+  "name": "Nvidia-applet", 
+  "shell-version": [
+      "3.20",
+      "3.19",
+      "3.18"
+  ], 
+  "url": "https://github.com/tomMoral/nvapplet-gnome-shell-extension", 
+  "uuid": "nvapplet@tomMoral.org"
+}
