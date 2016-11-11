@@ -6,6 +6,7 @@
 // Licence: GPLv2+
 
 const Gio = imports.gi.Gio;
+const Clutter = imports.gi.Clutter;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
 function getSettings()
@@ -33,3 +34,21 @@ function debug(msg)
 {
     log('[NvApplet] - DEBUG - ' + msg) 
 }
+
+
+function color_from_string(color){
+    let clutterColor, res;
+    debug("Color from string : "+color);
+
+
+    if (!Clutter.Color.from_string){
+        clutterColor = new Clutter.Color();
+        clutterColor.from_string(color);
+    } else {
+        [res, clutterColor] = Clutter.Color.from_string(color);
+    }
+  
+    return clutterColor;
+
+}
+

@@ -6,13 +6,20 @@
 // Licence: GPLv2+
 
 const Gtk = imports.gi.Gtk;
+const Gdk = imports.gi.Gdk;
 const GObject = imports.gi.GObject;
-const Utils = imports.misc.extensionUtils.getCurrentExtension().imports.utils;
+const Lang = imports.lang;
+
 const ExtensionUtils = imports.misc.extensionUtils;
 const Extension = ExtensionUtils.getCurrentExtension();
+const Utils = Extension.imports.utils;
+const debug = Extension.imports.utils.debug;
 
 const Gettext = imports.gettext;
 const _ = Gettext.domain('nvapplet').gettext;
+
+
+const N_ = function(e) { return e; };
 
 let name_str = "";
 let value_str = "";
@@ -29,92 +36,116 @@ function init()
 {
 }
 
-// Build prefs UI 
-function buildPrefsWidget()
-{	
-	// Read locale files
-	let locales = Extension.dir.get_path() + "/locale";
-	Gettext.bindtextdomain('nvapplet', locales);
-	name_str = _("Name");
-	value_str = _("Value");
-	opentodolist_str = _("Open nvapplet");
-	
-	let pretty_names = { 'open-nvapplet': opentodolist_str }
+function buildPrefsWidget() {
+	let prefWindow = new PrefWindow();
+	prefWindow.show_all();
 
-	let model = new Gtk.ListStore();
-
-	model.set_column_types
-	([
-		GObject.TYPE_STRING,
-		GObject.TYPE_STRING,
-		GObject.TYPE_INT,
-		GObject.TYPE_INT
-	]);
-
-	let settings = Utils.getSettings();
-
-	for(key in pretty_names)
-		append_hotkey(model, settings, key, pretty_names[key]);
-
-	let treeview = new Gtk.TreeView(
-	{
-		'expand': true,
-		'model': model
-	});
-
-	let col;
-	let cellrend;
-	cellrend = new Gtk.CellRendererText();
-	col = new Gtk.TreeViewColumn(
-	{
-		'title': name_str,
-		'expand': true
-	});
-
-	col.pack_start(cellrend, true);
-	col.add_attribute(cellrend, 'text', 1);
-
-	treeview.append_column(col);
-
-	cellrend = new Gtk.CellRendererAccel({
-		'editable': true,
-		'accel-mode': Gtk.CellRendererAccelMode.GTK
-	});
-
-	cellrend.connect('accel-edited', function(rend, iter, key, mods) {
-		let value = Gtk.accelerator_name(key, mods);
-		
-		let [succ, iter ] = model.get_iter_from_string(iter);
-		
-		if(!succ) {
-			throw new Error("Something be broken, yo.");
-		}
-
-		let name = model.get_value(iter, 0);
-
-		model.set(iter, [ 2, 3 ], [ mods, key ]);
-
-		global.log("Changing value for " + name + ": " + value);
-
-		settings.set_strv(name, [value]);
-	});
-
-	col = new Gtk.TreeViewColumn({
-		'title': value_str
-	});
-
-	col.pack_end(cellrend, false);
-	col.add_attribute(cellrend, 'accel-mods', 2);
-	col.add_attribute(cellrend, 'accel-key', 3);
-
-	treeview.append_column(col);
-
-	let win = new Gtk.ScrolledWindow(
-	{
-		'vexpand': true
-	});
-	win.add(treeview);	
-	win.show_all();
-
-	return win;
+	return prefWindow;
 }
+
+
+const PrefWindow = new GObject.Class({
+	Name: 'PrefWindow',
+	GTypeName: 'PrefWindow',
+	Extends: Gtk.Grid,
+
+	_init: function(params) {
+		this.parent(params);
+		this.margin = 12;
+		this.row_spacing = this.column_spacing = 6;
+
+		this._settings = Utils.getSettings();
+
+		this.set_orientation(Gtk.Orientation.VERTICAL);
+
+		// Add Widgets
+		this._widgets = {};
+
+		// Main container
+		this._widgets.box = new Gtk.Box({
+			orientation: Gtk.Orientation.VERTICAL,
+			margin: 20,
+			margin_top: 10,
+			expand: true,
+			spacing: 10,
+		});
+
+		// Add widgets
+		this._addUpdateDelayWidget();
+
+		this._addColorSector('gpu-load-color', _("GPU load"));
+		this._addColorSector('gpu-memory-color', _("GPU load"));
+
+		// Insert main container
+		this.add(this._widgets.box);
+	},
+
+
+	_addUpdateDelayWidget: function() {
+		var label = new Gtk.Label({
+			label: '<b>'+_("Update delay")+'</b>',
+			use_markup: true,
+			halign: Gtk.Align.START
+		});
+
+		var adjustment = new Gtk.Adjustment({
+			value: this._settings.get_double('update-delay'),
+			lower: .3,
+			upper: 30,
+			step_increment: 0.1,
+			page_increment: 0.5
+		});
+
+		this._widgets.updateDelay = new Gtk.SpinButton({
+			adjustment: adjustment
+		});
+
+		this._widgets.updateDelay.set_digits(2);
+
+		let hbox = new Gtk.Box({
+			orientation: Gtk.Orientation.HORIZONTAL,
+		});
+
+		hbox.pack_start(label, true, true, 0);
+		hbox.add(this._widgets.updateDelay);
+
+		this._widgets.box.add(hbox);
+
+		this._widgets.updateDelay.connect('value-changed', Lang.bind(this, this._updateDelayChanged));
+	},
+
+    _addColorSector: function(key, name) {
+		let label = new Gtk.Label({
+			label: '<b>'+name+'</b>',
+			use_markup: true,
+			halign: Gtk.Align.START
+		});
+        let picker = new Gtk.ColorButton({expand:false});
+        let hbox = new Gtk.HBox({spacing:5});
+
+		hbox.pack_start(label, true, true, 0);
+        hbox.pack_end(picker, false, false, 0);
+        picker.set_use_alpha(true);
+
+        let value = this._settings.get_string(key);
+        let clutterColor = Utils.color_from_string(value);
+        let color = new Gdk.RGBA();
+        let ctemp = [clutterColor.red,clutterColor.green,clutterColor.blue,clutterColor.alpha/255];
+        color.parse('rgba(' + ctemp.join(',') + ')');	
+        picker.set_rgba(color);
+        picker.connect('color-set', Lang.bind(this, function(color){
+		    color = color.get_rgba();
+		    output = N_("#%02x%02x%02x%02x").format(color.red * 255, color.green * 255,
+		                                            color.blue * 255, color.alpha * 255);
+            this._settings.set_string(key, output);
+            debug("Set color to: "+ output);
+        }));
+        this._widgets.box.add(hbox);
+    },
+
+	_updateDelayChanged: function() {
+		let value = this._widgets.updateDelay.get_value().toFixed(2);
+		debug('New delay value: ' + value);
+		this._settings.set_double('update-delay', value);
+	},
+});

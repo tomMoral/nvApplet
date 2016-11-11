@@ -5,6 +5,7 @@
 //
 // Licence: GPLv2+
 const Main = imports.ui.main;
+const Gtk = imports.gi.Gtk;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 const nv_applet = Extension.imports.gui_elements.nv_applet;
 const debug = Extension.imports.utils.debug;
@@ -13,9 +14,13 @@ let nvApplet;	// Todolist instance
 let meta;
 
 // Init function
-function init(metadata) 
-{		
+function init(metadata)
+{
 	meta = metadata;
+	let iconsDir = metadata.dir.get_child('icons');
+    if (iconsDir.query_exists(null)) {
+        Gtk.IconTheme.get_default().append_search_path(iconsDir.get_path());
+	}
 }
 
 function enable()

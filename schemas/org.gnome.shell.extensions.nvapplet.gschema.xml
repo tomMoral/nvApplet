@@ -1,9 +1,30 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <schemalist>
-	<schema path="/org/gnome/shell/extensions/nvapplet/" id="org.gnome.shell.extensions.nvapplet" >
+	<schema path="/org/gnome/shell/extensions/nvapplet/"
+			id="org.gnome.shell.extensions.nvapplet" >
 		<key type="as" name="open-nvapplet">
 			<default><![CDATA[['<Control><Alt>B']]]></default>
 			<summary>The key you want to open todolist.</summary>
+		</key>
+		<key type="d" name="update-delay">
+			<default>1.0</default>
+			<summary>Refresh delay in secondss.</summary>
+		</key>
+		<key name="display-gpu-memory" type="b">
+			<default>true</default>
+			<summary>Display the memory load of the GPU when it is on</summary>
+		</key>
+		<key name="gpu-memory-color" type="s">
+			<default>'#00b35b'</default>
+			<summary>Color of GPU memory in the chart</summary>
+		</key>
+		<key name="display-gpu-load" type="b">
+			<default>true</default>
+			<summary>Display the GPU load when it is on</summary>
+		</key>
+		<key name="gpu-load-color" type="s">
+			<default>'#0000AA'</default>
+			<summary>Color of GPU load in the chart</summary>
 		</key>
 	</schema>
 </schemalist>

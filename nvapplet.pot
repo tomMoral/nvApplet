@@ -17,16 +17,20 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: prefs.js:38
+#: prefs.js:37
 msgid "Name"
 msgstr ""
 
-#: prefs.js:39
+#: prefs.js:38
 msgid "Value"
 msgstr ""
 
-#: prefs.js:40
-msgid "Open todolist"
+#: prefs.js:39
+msgid "Open nvapplet"
+msgstr ""
+
+#: prefs,js:40
+msgid "Update delay"
 msgstr ""
 
 #: extension.js:62 extension.js:127 extension.js:164

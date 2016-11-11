@@ -8,13 +8,16 @@
 .indic_back{
 	border: solid #424242 1px;
 	border-radius: 2px;
+	margin: 1px 0 3px 0;
 	/*background-color: black;*/
 	/*box-shadow: 1px -1px .5px #424242;*/
 }
 
 .indic_load{
+	border-radius: 2px;
 	background-color: #0000AA;
 }
 .indic_mem{
+	border-radius: 2px;
 	background-color: orange;
 }

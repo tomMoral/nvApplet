@@ -14,19 +14,16 @@ const Mainloop = imports.mainloop;
 
 
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
-const ExtensionSettings = Extension.imports.utils.getSettings();
-const debug = Extension.imports.utils.debug;
+
+const Utils = Extension.imports.utils;
+const debug = Utils.debug;
 const PasswordDialog = Extension.imports.gui_elements.password_prompt.PasswordDialog;
 
-const GPU_ON_ICON = Gio.icon_new_for_string(Extension.path + "/icons/gpu_on.png");
-const GPU_OFF_ICON = Gio.icon_new_for_string(Extension.path + "/icons/gpu_off.png");
-const GPU_ON_ICON_DARK = Gio.icon_new_for_string(Extension.path + "/icons/gpu_on_dark.png");
-const GPU_OFF_ICON_DARK = Gio.icon_new_for_string(Extension.path + "/icons/gpu_off_dark.png");
+//const GPU_ON_ICON = Gio.icon_new_for_string(Extension.path + "/icons/gpu_on.png");
 
 const BUTTON_RELEASE = 7;
 const Y_MAX = 50;
 const Y_MIN = 5;
-const WIDTH = 100;
 const HEIGHT = 55;
 const SIZE_ICON = 24;
 const Y_SPAN = Y_MAX-Y_MIN;
@@ -42,10 +39,10 @@ NvApplet.prototype = {
     state : 2,
     mainBox : null,
     timeout_loop: null,
-    
+
     __proto__: PanelMenu.Button.prototype,
 
-    _init : function(){        
+    _init : function(){
         // Locale
         let locales = this.meta.path + "/locale";
         Gettext.bindtextdomain('nvapplet', locales);
@@ -58,49 +55,48 @@ NvApplet.prototype = {
         // Key binding
         let mode = Shell.ActionMode ? Shell.ActionMode.ALL : Shell.KeyBindingMode.ALL;
         Main.wm.addKeybinding('open-nvapplet',
-                              ExtensionSettings,
+                              Utils.getSettings(),
                               Meta.KeyBindingFlags.NONE,
                               mode,
                               Lang.bind(this, this.signalKeyOpen));
     },
     _buildUI: function(){
-        // Destroy previous box         
+        // Destroy previous box
         if (this.mainBox != null)
             this.mainBox.destroy();
 
         //Set size actor
-        this.actor.set_size(WIDTH, HEIGHT);
         this.box = new St.BoxLayout();
+        this.actor.set_style("-natural-hpadding: 7px")
         this.actor.add_actor(this.box);
 
         // Add main icon
-        this.gpu_icon = new St.Icon({icon_size: SIZE_ICON, gicon: GPU_ON_ICON,
-                                     style_class: 'gpu_icon', x_expand: true});
+        let sys = new PanelMenu.SystemIndicator();
+        this.gpu_icon = sys._addIndicator();
+        this.gpu_icon.icon_name = "gpu_on";
+        this.gpu_icon.set_style("padding-left:0px ; padding-right:0px")
 
         this.back_load_indic = new St.Widget({
             style_class: 'indic_back',
             width : 15,
             height: Y_SPAN
         });
-        this.front_load_indic = new St.Widget({
-            style_class: 'indic_load',
-        });
+        this.front_load_indic = new St.Widget();
         this.back_mem_indic = new St.Widget({
             style_class: 'indic_back',
             width : 15,
             height: Y_SPAN
         });
-        this.front_mem_indic = new St.Widget({
-            style_class: 'indic_mem',
-        });
+        this.front_mem_indic = new St.Widget();
         this.box.add_child(this.back_mem_indic);
-        this.box.add_actor(this.gpu_icon);
+        this.box.add_actor(sys.indicators);
         this.box.add_child(this.back_load_indic);
-        
         this.box.add_child(this.front_load_indic);
         this.box.add_child(this.front_mem_indic);
-        this._check_state();
-
+        // sys.indicators.add_child(this.back_mem_indic);
+        // sys.indicators.add_child(this.back_load_indic);
+        // sys.indicators.add_child(this.front_mem_indic);
+        // sys.indicators.add_child(this.front_load_indic);
 
         // Create main box
         this.mainBox = new St.BoxLayout();
@@ -123,15 +119,15 @@ NvApplet.prototype = {
             nvBox.one = false;
         }
         let item_shutdown = new PopupMenu.PopupMenuItem("Shutdown Nvidia card")
-        item_shutdown.actor.connect('event', 
-                                    Lang.bind(this, function(actor, ev){
-
-            if(ev.type() != BUTTON_RELEASE)
-                return;
-            let mod = new PasswordDialog("");
-            mod.set_callback(Lang.bind(this, this._shutdown_nvidia));
-            mod.open();
-        }));
+        item_shutdown.actor.connect('event', Lang.bind(this,
+            function(actor, ev){
+                if(ev.type() != BUTTON_RELEASE)
+                    return;
+                let mod = new PasswordDialog("");
+                mod.set_callback(Lang.bind(this, this._shutdown_nvidia));
+                mod.open();
+            }
+        ));
         nvBox.addMenuItem(item_shutdown);
         this.nvBox = nvBox;
 
@@ -149,13 +145,13 @@ NvApplet.prototype = {
     },
     _enable : function() {
         // Conect file 'changed' signal to _refresh
-        let fileM = Gio.file_new_for_path('/proc/acpi/bbswitch');
+        let fileM = Gio.file_new_for_path('/tmp/.X8-lock');
         this.monitor = fileM.monitor(Gio.FileMonitorFlags.NONE, null);
         this.monitor.connect('changed', Lang.bind(this, this._file_changed));
-
-
-        // Add loop to change state
-        this.timeout_loop = Mainloop.timeout_add_seconds(3, Lang.bind(this, this._check_state));
+        if (fileM.query_exists(null))
+            this._set_on();
+        else
+            this._set_off();
     },
     _disable : function() {
         // Stop monitoring file
@@ -163,12 +159,17 @@ NvApplet.prototype = {
         if (this.timeout_loop != null){
             let state_exit = Mainloop.source_remove(this.timeout_loop);
             debug("source remove exit code: " + state_exit);
+            this.timeout_loop = null;
         }
         debug('Safe stop for Mainloop');
-        Main.wm.removeKeybinding('open-nvapplet')
+        Main.wm.removeKeybinding('open-nvapplet');
+
+        //Destroy ui elements
         this.gpu_icon.destroy();
         this.back_load_indic.destroy();
         this.front_load_indic.destroy();
+        this.back_mem_indic.destroy();
+        this.front_mem_indic.destroy();
     },
     // Called when 'open-nvapplet' is emitted (binded with Lang.bind)
     signalKeyOpen: function(){
@@ -178,27 +179,40 @@ NvApplet.prototype = {
             this.menu.open();
         }
     },
-    _file_changed: function(){
+
+    _file_changed: function(monitor, a_file, other_file, event_type) {
         debug("State changed");
-        this._check_state()
+        if (event_type == Gio.FileMonitorEvent.CREATED)
+            this._set_on();
+        else if (event_type ==  Gio.FileMonitorEvent.DELETED)
+            this._set_off();
     },
-    _check_state: function(){
-        let bb_state = GLib.spawn_command_line_sync("cat /proc/acpi/bbswitch")[1].toString();
-        if (bb_state.length == 16 && this.state != 1){
-            this.gpu_icon.set_gicon(GPU_ON_ICON);
-            this.back_load_indic.show();
-            this.back_mem_indic.show();
-            this.state = 1;
+    _set_on: function(){
+        this.gpu_icon.icon_name = "gpu_on";
+        let settings = Utils.getSettings();
+        let color_str = settings.get_string('gpu-load-color');
+        this.front_load_indic.set_background_color(Utils.color_from_string(color_str));
+        let color_str = settings.get_string('gpu-memory-color');
+        this.front_mem_indic.set_background_color(Utils.color_from_string(color_str));
+        this.back_load_indic.show();
+        this.back_mem_indic.show();
+        this.state = 1;
+        // Add loop to change state
+
+        let _delay = Utils.getSettings().get_double('update-delay');
+        this.timeout_loop = Mainloop.timeout_add_seconds(
+            _delay, Lang.bind(this, this._update_load));
+    },
+    _set_off: function(){
+        this.gpu_icon.icon_name = "gpu_off";
+        this.state = 0;
+        this.back_load_indic.hide();
+        this.back_mem_indic.hide();
+        if (this.timeout_loop != null){
+            let state_exit = Mainloop.source_remove(this.timeout_loop);
+            debug("source remove exit code: " + state_exit);
+            this.timeout_loop = null;
         }
-        if (bb_state.length == 17 && this.state != 0){
-            this.gpu_icon.set_gicon(GPU_OFF_ICON);
-            this.state = 0;
-            this.back_load_indic.hide();
-            this.back_mem_indic.hide();
-        }
-        if (this.state == 1)
-            this._update_load();
-        return true;
     },
     _update_load: function(){
         let Popen = GLib.spawn_command_line_sync(
@@ -212,7 +226,7 @@ NvApplet.prototype = {
 
         let load = parseInt(values[0]);
         let g = this.back_load_indic.get_allocation_box();
-        let y = g.y2-2 - (g.y2-g.y1-4) * load/100;
+        let y = g.y2-2 - Math.max(0, (g.y2-g.y1-4) * load/100);
 
         this.front_load_indic.allocate(
             new Clutter.ActorBox({
@@ -223,14 +237,15 @@ NvApplet.prototype = {
         let mem_total = parseInt(values[1]);
         let mem_used = parseInt(values[2]);
         g = this.back_mem_indic.get_allocation_box();
-        y = g.y2 - (g.y2-g.y1-4) * mem_used/mem_total;
+        y = g.y2-2 - Math.max(0, (g.y2-g.y1-4) * mem_used/mem_total);
 
         this.front_mem_indic.allocate(
             new Clutter.ActorBox({
                 x1:g.x1+2, x2:g.x2-2,
                 y1:y, y2:g.y2-2
             }), 0);
-        
+        return true;
+
     },
     _run_cmd: function(pass, cmd){
         debug(cmd);
