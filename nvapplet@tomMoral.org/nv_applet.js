@@ -17,7 +17,7 @@ const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
 const Utils = Extension.imports.utils;
 const debug = Utils.debug;
-const PasswordDialog = Extension.imports.gui_elements.password_prompt.PasswordDialog;
+// const PasswordDialog = Extension.imports.gui_elements.password_prompt.PasswordDialog;
 
 //const GPU_ON_ICON = Gio.icon_new_for_string(Extension.path + "/icons/gpu_on.png");
 

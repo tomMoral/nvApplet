@@ -7,7 +7,7 @@
 const Main = imports.ui.main;
 const Gtk = imports.gi.Gtk;
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
-const nv_applet = Extension.imports.gui_elements.nv_applet;
+const nv_applet = Extension.imports.nv_applet;
 const debug = Extension.imports.utils.debug;
 
 let nvApplet;	// Todolist instance
