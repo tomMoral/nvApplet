@@ -73,8 +73,8 @@ const PrefWindow = new GObject.Class({
 		// Add widgets
 		this._addUpdateDelayWidget();
 
-		this._addColorSector('gpu-load-color', _("GPU load"));
-		this._addColorSector('gpu-memory-color', _("GPU load"));
+		this._addColorSector('gpu-load-color', _("GPU load display"));
+		this._addColorSector('gpu-memory-color', _("GPU memory display"));
 
 		// Insert main container
 		this.add(this._widgets.box);

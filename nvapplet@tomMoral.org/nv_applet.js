@@ -15,6 +15,10 @@ const Mainloop = imports.mainloop;
 
 const Extension = imports.misc.extensionUtils.getCurrentExtension();
 
+//Load translations
+const Gettext = imports.gettext;
+const _ = Gettext.domain('nvapplet').gettext;
+
 const Utils = Extension.imports.utils;
 const debug = Utils.debug;
 // const PasswordDialog = Extension.imports.gui_elements.password_prompt.PasswordDialog;
@@ -118,7 +122,7 @@ NvApplet.prototype = {
                 subMenu.open();
             nvBox.one = false;
         }
-        let item_shutdown = new PopupMenu.PopupMenuItem("Shutdown Nvidia card")
+        let item_shutdown = new PopupMenu.PopupMenuItem(_("Shutdown Nvidia card"));
         item_shutdown.actor.connect('event', Lang.bind(this,
             function(actor, ev){
                 if(ev.type() != BUTTON_RELEASE)

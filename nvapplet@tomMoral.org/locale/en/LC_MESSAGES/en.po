@@ -1,18 +1,19 @@
-#: extension.js:40 73 106
-msgid "(...)"
-msgstr "(···)"
-#: extension.js:95
-msgid "New task..."
-msgstr "New task…"
-#: prefs.js:37
-msgid "Name"
-msgstr "Name"
-#: prefs.js:38
-msgid "Value"
-msgstr "Value"
-#: prefs.js:39
-msgid "Open nvapplet"
-msgstr "Open nvapplet"
-#: pref.js:40
+
+# --------- nv_applet.js ----------
+#: nv_applet.js:125
+msgid "Shutdown Nvidia card"
+msgstr "Shutdown Nvidia card"
+
+
+# ---------- prefs.js -------
+#: prefs.js:76
+msgid "GPU load display"
+msgstr "GPU load display"
+
+#: prefs.js:77
+msgid "GPU memory display"
+msgstr "GPU memory display"
+
+#: prefs.js:40
 msgid "Update delay"
 msgstr "Update delay"
