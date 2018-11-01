@@ -9,7 +9,6 @@ const Shell = imports.gi.Shell;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
 const Clutter = imports.gi.Clutter;
-const Gettext = imports.gettext;
 const Mainloop = imports.mainloop;
 
 
@@ -194,8 +193,6 @@ NvApplet.prototype = {
     _set_on: function(){
         this.gpu_icon.icon_name = "gpu_on";
         let settings = Utils.getSettings();
-        let color_str = settings.get_string('gpu-load-color');
-        this.front_load_indic.set_background_color(Utils.color_from_string(color_str));
         let color_str = settings.get_string('gpu-memory-color');
         this.front_mem_indic.set_background_color(Utils.color_from_string(color_str));
         this.back_load_indic.show();
@@ -266,7 +263,6 @@ NvApplet.prototype = {
         });
         in_writer.put_string(pass, null);
         let [out, size] = out_reader.read_line(null);
-        let [err, size] = err_reader.read_line(null);
     },
     _shutdown_nvidia: function(sudo_pass){
         let cmd = ['/bin/sudo', '-S', '-k', 'rmmod', 'nvidia'];
